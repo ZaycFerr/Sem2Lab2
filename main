@@ -1,0 +1,143 @@
+#include <iostream>
+#include <algorithm>
+#include <stdexcept>
+#include <cassert>
+
+template <class T>
+class vector {
+private:
+    T* arr;
+    size_t sz;
+    size_t cap;
+
+public:
+    // Используем указатель как итератор
+    typedef T* iterator;
+    typedef const T* const_iterator;
+
+    vector() : arr(nullptr), sz(0), cap(0) {}
+    
+    vector(size_t n, const T& val = T()) : arr(new T[n]), sz(n), cap(n) {
+        for (size_t i = 0; i < n; ++i) arr[i] = val;
+    }
+    
+    vector(const vector& other) : arr(new T[other.cap]), sz(other.sz), cap(other.cap) {
+        for (size_t i = 0; i < sz; ++i) arr[i] = other.arr[i];
+    }
+    
+    ~vector() { delete[] arr; }
+    
+    vector& operator=(const vector& other) {
+        if (this != &other) {
+            delete[] arr;
+            sz = other.sz;
+            cap = other.cap;
+            arr = new T[cap];
+            for (size_t i = 0; i < sz; ++i) arr[i] = other.arr[i];
+        }
+        return *this;
+    }
+    
+    T& operator[](size_t i) { return arr[i]; }
+    const T& operator[](size_t i) const { return arr[i]; }
+    
+    T& at(size_t i) { 
+        if (i >= sz) throw std::out_of_range("index out of range"); 
+        return arr[i]; 
+    }
+    
+    T& front() { return arr[0]; }
+    T& back() { return arr[sz-1]; }
+    T* data() { return arr; }
+    const T* data() const { return arr; }
+    
+    iterator begin() { return arr; }
+    iterator end() { return arr + sz; }
+    const_iterator begin() const { return arr; }
+    const_iterator end() const { return arr + sz; }
+    
+    bool empty() const { return sz == 0; }
+    size_t size() const { return sz; }
+    size_t capacity() const { return cap; }
+    
+    void reserve(size_t n) {
+        if (n <= cap) return;
+        T* new_arr = new T[n];
+        for (size_t i = 0; i < sz; ++i) new_arr[i] = arr[i];
+        delete[] arr;
+        arr = new_arr;
+        cap = n;
+    }
+    
+    void clear() { sz = 0; }
+    
+    void push_back(const T& val) {
+        if (sz >= cap) {
+            size_t new_cap = cap == 0 ? 1 : cap * 2;
+            reserve(new_cap);
+        }
+        arr[sz++] = val;
+    }
+    
+    void pop_back() { 
+        if (sz > 0) --sz; 
+    }
+    
+    void insert(iterator pos, const T& val) {
+        size_t index = pos - begin();
+        if (sz >= cap) {
+            size_t new_cap = cap == 0 ? 1 : cap * 2;
+            reserve(new_cap);
+        }
+        for (size_t i = sz; i > index; --i) arr[i] = arr[i-1];
+        arr[index] = val;
+        ++sz;
+    }
+    
+    void swap(vector& other) {
+        std::swap(arr, other.arr);
+        std::swap(sz, other.sz);
+        std::swap(cap, other.cap);
+    }
+};
+
+int main() {
+    vector<int> v;
+    v.push_back(3);
+    v.push_back(1);
+    v.push_back(4);
+    v.push_back(1);
+    v.push_back(5);
+    
+    assert(v.size() == 5);
+    assert(v[0] == 3);
+    
+    std::sort(v.begin(), v.end());
+    assert(v[0] == 1);
+    assert(v[4] == 5);
+    
+    v.pop_back();
+    assert(v.size() == 4);
+    
+    vector<int> v2(3, 42);
+    assert(v2[1] == 42);
+    
+    vector<int> v3 = v2;
+    assert(v3[0] == 42);
+    
+    try {
+        v2.at(5);
+        assert(false);
+    } catch(const std::out_of_range&) {
+        assert(true);
+    }
+    
+    v2.reserve(20);
+    assert(v2.capacity() >= 20);
+    
+    v.insert(v.begin() + 2, 99);
+    assert(v[2] == 99);
+    
+    std::cout << "All tests passed!\n";
+    return 0;
+}
